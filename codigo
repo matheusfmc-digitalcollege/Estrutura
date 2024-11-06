@@ -1,0 +1,210 @@
+// Nomes dos desenvolvedores: Matheus Freire Martins da Costa e Carlos Rafael Paiva Ribeiro
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct fruit {
+    int id;
+    char name[20];
+    int quantity;
+    struct fruit* next;
+} Fruit;
+
+Fruit* createFruit(int id, char name[], int quantity) {
+    Fruit* new_fruit = (Fruit*) malloc(sizeof(Fruit));
+    new_fruit->id = id;
+    strcpy(new_fruit->name, name);
+    new_fruit->quantity = quantity;
+    new_fruit->next = NULL;
+    return new_fruit;
+}
+
+int fruitExists(Fruit* head, int id) {
+    Fruit* current = head;
+    while (current != NULL) {
+        if (current->id == id) return 1;
+        current = current->next;
+    }
+    return 0;
+}
+
+void append(Fruit** head_ref, int id, char name[], int quantity) {
+    if (fruitExists(*head_ref, id)) {
+        printf("Código já existe!\n");
+        return;
+    }
+    Fruit* new_fruit = createFruit(id, name, quantity);
+    if (*head_ref == NULL) {
+        *head_ref = new_fruit;
+        return;
+    }
+    Fruit* last = *head_ref;
+    while (last->next != NULL) {
+        last = last->next;
+    }
+    last->next = new_fruit;
+    printf("Fruta cadastrada com sucesso!\n");
+}
+
+void listFruits(Fruit* head) {
+    if (head == NULL) {
+        printf("Nenhuma fruta cadastrada!\n");
+        return;
+    }
+    Fruit* current = head;
+    while (current != NULL) {
+        printf("ID: %d, Nome: %s, Quantidade: %d\n", current->id, current->name, current->quantity);
+        current = current->next;
+    }
+}
+
+Fruit* searchFruit(Fruit* head, int id) {
+    Fruit* current = head;
+    while (current != NULL) {
+        if (current->id == id) {
+            return current;
+        }
+        current = current->next;
+    }
+    return NULL;
+}
+
+void updateFruit(Fruit* head, int id, char name[], int quantity) {
+    Fruit* fruit = searchFruit(head, id);
+    if (fruit == NULL) {
+        printf("Fruta não encontrada!\n");
+        return;
+    }
+    strcpy(fruit->name, name);
+    fruit->quantity = quantity;
+    printf("Fruta atualizada com sucesso!\n");
+}
+
+void deleteFruit(Fruit** head_ref, int id) {
+    Fruit* current = *head_ref;
+    Fruit* prev = NULL;
+    while (current != NULL && current->id != id) {
+        prev = current;
+        current = current->next;
+    }
+    if (current == NULL) {
+        printf("Fruta não encontrada!\n");
+        return;
+    }
+    if (current->quantity > 0) {
+        printf("Não é possível excluir a fruta com estoque disponível!\n");
+        return;
+    }
+    if (prev == NULL) {
+        *head_ref = current->next;
+    } else {
+        prev->next = current->next;
+    }
+    free(current);
+    printf("Fruta excluída com sucesso!\n");
+}
+
+void sellFruit(Fruit* head, int id, int quantity) {
+    Fruit* fruit = searchFruit(head, id);
+    if (fruit == NULL) {
+        printf("Fruta não encontrada!\n");
+        return;
+    }
+    if (fruit->quantity < quantity) {
+        printf("Quantidade insuficiente no estoque!\n");
+        return;
+    }
+    fruit->quantity -= quantity;
+    printf("Venda realizada com sucesso!\n");
+    FILE* file = fopen("vendas.txt", "a");
+    if (file != NULL) {
+        fprintf(file, "Fruta Vendida: %s, Quantidade: %d\n", fruit->name, quantity);
+        fclose(file);
+    } else {
+        printf("Erro ao abrir o arquivo de vendas!\n");
+    }
+}
+
+void menu() {
+    printf("\nMenu:\n");
+    printf("1. Cadastrar fruta\n");
+    printf("2. Listar frutas\n");
+    printf("3. Buscar fruta\n");
+    printf("4. Alterar fruta\n");
+    printf("5. Excluir fruta\n");
+    printf("6. Vender fruta\n");
+    printf("7. Sair\n");
+}
+
+int main() {
+    Fruit* head = NULL;
+    int opcao, id, quantity;
+    char name[20];
+
+    do {
+        menu();
+        printf("Escolha uma opção: ");
+        scanf("%d", &opcao);
+
+        switch (opcao) {
+            case 1:
+                printf("Digite o código da fruta: ");
+                scanf("%d", &id);
+                printf("Digite o nome da fruta: ");
+                scanf("%s", name);
+                printf("Digite a quantidade: ");
+                scanf("%d", &quantity);
+                append(&head, id, name, quantity);
+                break;
+
+            case 2:
+                listFruits(head);
+                break;
+
+            case 3:
+                printf("Digite o código da fruta: ");
+                scanf("%d", &id);
+                Fruit* fruit = searchFruit(head, id);
+                if (fruit != NULL) {
+                    printf("ID: %d, Nome: %s, Quantidade: %d\n", fruit->id, fruit->name, fruit->quantity);
+                } else {
+                    printf("Fruta não encontrada!\n");
+                }
+                break;
+
+            case 4:
+                printf("Digite o código da fruta: ");
+                scanf("%d", &id);
+                printf("Digite o novo nome da fruta: ");
+                scanf("%s", name);
+                printf("Digite a nova quantidade: ");
+                scanf("%d", &quantity);
+                updateFruit(head, id, name, quantity);
+                break;
+
+            case 5:
+                printf("Digite o código da fruta: ");
+                scanf("%d", &id);
+                deleteFruit(&head, id);
+                break;
+
+            case 6:
+                printf("Digite o código da fruta: ");
+                scanf("%d", &id);
+                printf("Digite a quantidade a ser vendida: ");
+                scanf("%d", &quantity);
+                sellFruit(head, id, quantity);
+                break;
+
+            case 7:
+                printf("Saindo...\n");
+                break;
+
+            default:
+                printf("Opção inválida!\n");
+        }
+    } while (opcao != 7);
+
+    return 0;
+}
